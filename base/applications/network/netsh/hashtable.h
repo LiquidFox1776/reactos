@@ -5,11 +5,7 @@
  * COPYRIGHT:  Copyright 2025 Curtis Wilson <LiquidFox1776@gmail.com>
  */
  
-#include <windows.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stddef.h>
-#include <math.h>
+#include "precomp.h"
 
 // todo make bIsFull private
 typedef struct _HASH_ENTRY
