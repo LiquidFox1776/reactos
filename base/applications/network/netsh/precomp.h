@@ -28,6 +28,9 @@
 #include <conutils.h>
 #include <strsafe.h>
 #include <netsh.h>
+#include <windows.h>
+#include <stddef.h>
+#include <math.h>
 
 #include "resource.h"
 #include "hashtable.h"
