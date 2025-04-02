@@ -139,11 +139,27 @@ TDI_STATUS InfoTdiSetArptableMIB(PIP_INTERFACE IF, PVOID Buffer, UINT BufferSize
     if (!Buffer || BufferSize < sizeof(IPARP_ENTRY))
         return TDI_INVALID_PARAMETER;
 
+    // Windows 2000 returns INVALID_PARAMETER when Type is not within this range
+    if (ArpEntry->Type < ARP_ENTRY_OTHER || ArpEntry->Type > ARP_ENTRY_STATIC)
+        return TDI_INVALID_PARAMETER;
+    
     AddrInitIPv4(&Address, ArpEntry->LogAddr);
 
     if ((NCE = NBLocateNeighbor(&Address, IF)))
+    {
         NBRemoveNeighbor(NCE);
-
+        // if delete operation was requested there is nothing left to do
+        if (ArpEntry->Type == ARP_ENTRY_INVALID)
+            return TDI_SUCCESS;
+    }
+    else
+    {
+        /* Windows 2000 returns INVALID_PARAMETER when an ARP entry is requested to be erased
+           but the entry does not exist */
+        if (ArpEntry->Type == ARP_ENTRY_INVALID)
+            return TDI_INVALID_PARAMETER;
+    }
+    
     if (NBAddNeighbor(IF,
                       &Address,
                       ArpEntry->PhysAddr,
