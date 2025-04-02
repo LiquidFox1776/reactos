@@ -69,6 +69,10 @@ VOID DestroyFIBE(
     /* Unlink the FIB entry from the list */
     RemoveEntryList(&FIBE->ListEntry);
 
+    /* Free the NCE */
+    if (FIBE->Router)
+        ExFreePoolWithTag(FIBE->Router, NCE_TAG);
+    
     /* And free the FIB entry */
     FreeFIB(FIBE);
 }
@@ -226,7 +230,7 @@ PFIB_ENTRY RouterAddRoute(
 		   sizeof(FIBE->NetworkAddress) );
     RtlCopyMemory( &FIBE->Netmask, Netmask,
 		   sizeof(FIBE->Netmask) );
-    FIBE->Router         = Router;
+    FIBE->Router         = NBCopy(Router);
     FIBE->Metric         = Metric;
 
     /* Add FIB to the forward information base */
@@ -294,6 +298,10 @@ PNEIGHBOR_CACHE_ENTRY RouterGetRoute(PIP_ADDRESS Destination)
 	TI_DbgPrint(DEBUG_ROUTER,("Packet won't be routed\n"));
     }
 
+    /* create a copy in the ARP cache if needed or get a cache entry that matches
+       the BestNCE */
+    BestNCE = NBFindOrCreateNeighbor(BestNCE->Interface, &BestNCE->Address, TRUE);
+    
     return BestNCE;
 }
 
