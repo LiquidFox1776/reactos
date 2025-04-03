@@ -607,21 +607,21 @@ DWORD WINAPI DeleteIpNetEntry(PMIB_IPNETROW pArpEntry)
     
     // allocate buffer
     ULONG size = sizeof(TCP_REQUEST_SET_INFORMATION_EX) + sizeof(MIB_IPNETROW);
-    PVOID buffer = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
+    TCP_REQUEST_SET_INFORMATION_EX *buffer = HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, size);
     
     if (!buffer)
         return ERROR_OUTOFMEMORY;
         
-    ((TCP_REQUEST_SET_INFORMATION_EX *)buffer)->ID.toi_entity.tei_entity = AT_ARP;
-    ((TCP_REQUEST_SET_INFORMATION_EX *)buffer)->ID.toi_entity.tei_instance = 0x01; // must be 0x01 in win2k
-    ((TCP_REQUEST_SET_INFORMATION_EX *)buffer)->ID.toi_class = INFO_CLASS_PROTOCOL;
-    ((TCP_REQUEST_SET_INFORMATION_EX *)buffer)->ID.toi_type = INFO_TYPE_PROVIDER;
-    ((TCP_REQUEST_SET_INFORMATION_EX *)buffer)->ID.toi_id = IP_MIB_ARPTABLE_ENTRY_ID;
-    ((TCP_REQUEST_SET_INFORMATION_EX *)buffer)->BufferSize = sizeof(MIB_IPNETROW);
+    buffer->ID.toi_entity.tei_entity = AT_ARP;
+    buffer->ID.toi_entity.tei_instance = 0x01; // must be 0x01 in win2k
+    buffer->ID.toi_class = INFO_CLASS_PROTOCOL;
+    buffer->ID.toi_type = INFO_TYPE_PROVIDER;
+    buffer->ID.toi_id = IP_MIB_ARPTABLE_ENTRY_ID;
+    buffer->BufferSize = sizeof(MIB_IPNETROW);
     
-    ((MIB_IPNETROW *)((TCP_REQUEST_SET_INFORMATION_EX *)buffer)->Buffer)->dwIndex = pArpEntry->dwIndex;
-    ((MIB_IPNETROW *)((TCP_REQUEST_SET_INFORMATION_EX *)buffer)->Buffer)->dwAddr = pArpEntry->dwAddr;
-    ((MIB_IPNETROW *)((TCP_REQUEST_SET_INFORMATION_EX *)buffer)->Buffer)->dwType = ARP_ENTRY_INVALID;
+    ((MIB_IPNETROW *)(buffer->Buffer))->dwIndex = pArpEntry->dwIndex;
+    ((MIB_IPNETROW *)(buffer->Buffer))->dwAddr = pArpEntry->dwAddr;
+    ((MIB_IPNETROW *)(buffer->Buffer))->dwType = ARP_ENTRY_INVALID;
     
     dwError = TCPSendIoctl(tcpFile, 
                            IOCTL_TCP_SET_INFORMATION_EX,
@@ -632,7 +632,6 @@ DWORD WINAPI DeleteIpNetEntry(PMIB_IPNETROW pArpEntry)
   
     HeapFree(GetProcessHeap(), 0, buffer); 
     closeTcpFile(tcpFile);
-  
     return dwError;
 }
 
