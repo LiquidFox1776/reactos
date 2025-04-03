@@ -13,6 +13,7 @@
  */
 
 #include "precomp.h"
+static PNEIGHBOR_CACHE_ENTRY CopyNCEForFIBUse(PNEIGHBOR_CACHE_ENTRY NCE);
 
 LIST_ENTRY FIBListHead;
 KSPIN_LOCK FIBLock;
@@ -484,6 +485,31 @@ PFIB_ENTRY RouterCreateRoute(
     }
 
     return RouterAddRoute(NetworkAddress, Netmask, NCE, Metric);
+}
+
+
+static
+PNEIGHBOR_CACHE_ENTRY CopyNCEForFIBUse(PNEIGHBOR_CACHE_ENTRY NCE) 
+{
+    if (!NCE) 
+        return NULL;
+
+    // Allocate memory for the new NCECopy structure
+    PNEIGHBOR_CACHE_ENTRY NCECopy = ExAllocatePoolWithTag(
+        NonPagedPool, sizeof(NEIGHBOR_CACHE_ENTRY) + NCE->LinkAddressLength, NCE_TAG);
+
+    if (!NCECopy) 
+        return NULL;
+
+    NCECopy->State = NCE->State;
+    NCECopy->Interface = NCE->Interface;
+    NCECopy->LinkAddressLength = NCE->LinkAddressLength;
+    NCECopy->Address = NCE->Address;
+    // copy link address
+    NCECopy->LinkAddress = (PVOID)&NCECopy[1];
+    RtlCopyMemory(NCECopy->LinkAddress, NCE->LinkAddress, NCE->LinkAddressLength);
+    
+    return NCECopy;
 }
 
 
