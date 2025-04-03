@@ -81,6 +81,10 @@
 #define GAA_FLAG_SKIP_FRIENDLY_NAME 0x0020
 #endif
 
+#ifndef ARP_ENTRY_INVALID
+#define ARP_ENTRY_INVALID 2
+#endif
+
 // As in the mib from RFC 1213
 
 typedef struct _IPRouteEntry {
