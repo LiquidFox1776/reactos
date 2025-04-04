@@ -261,7 +261,6 @@ PNEIGHBOR_CACHE_ENTRY RouterGetRoute(PIP_ADDRESS Destination)
     PNEIGHBOR_CACHE_ENTRY NCE, BestNCE = NULL;
 
     TI_DbgPrint(DEBUG_ROUTER, ("Called. Destination (0x%X)\n", Destination));
-
     TI_DbgPrint(DEBUG_ROUTER, ("Destination (%s)\n", A2S(Destination)));
 
     TcpipAcquireSpinLock(&FIBLock, &OldIrql);
@@ -271,8 +270,15 @@ PNEIGHBOR_CACHE_ENTRY RouterGetRoute(PIP_ADDRESS Destination)
         NextEntry = CurrentEntry->Flink;
 	    Current = CONTAINING_RECORD(CurrentEntry, FIB_ENTRY, ListEntry);
 
-        NCE   = Current->Router;
-        State = NCE->State;
+        // See if the neighbor exists in the cache and copy the state if it does exist
+        NCE = NBLocateNeighbor(&Current->Router->Address, Current->Router->Interface);
+        if (NCE)
+            Current->Router->State = NCE->State;
+        else
+            Current->Router->State = NUD_STALE;
+            
+        
+        State = Current->Router->State;
 
 	Length = CommonPrefixLength(Destination, &Current->NetworkAddress);
 	MaskLength = AddrCountPrefixBits(&Current->Netmask);
@@ -299,8 +305,8 @@ PNEIGHBOR_CACHE_ENTRY RouterGetRoute(PIP_ADDRESS Destination)
 	TI_DbgPrint(DEBUG_ROUTER,("Packet won't be routed\n"));
     }
 
-    /* create a copy in the ARP cache if needed or get a cache entry that matches
-       the BestNCE */
+    // BestNCE might not be in the ARP cache so we need to create it if it is not in there
+    // we also need the entry from the cache table to be able to send datagrams
     BestNCE = NBFindOrCreateNeighbor(BestNCE->Interface, &BestNCE->Address, TRUE);
     
     return BestNCE;
@@ -501,6 +507,7 @@ PNEIGHBOR_CACHE_ENTRY CopyNCEForFIBUse(PNEIGHBOR_CACHE_ENTRY NCE)
     if (!NCECopy) 
         return NULL;
 
+    // Copy essential members 
     NCECopy->State = NCE->State;
     NCECopy->Interface = NCE->Interface;
     NCECopy->LinkAddressLength = NCE->LinkAddressLength;
@@ -508,6 +515,7 @@ PNEIGHBOR_CACHE_ENTRY CopyNCEForFIBUse(PNEIGHBOR_CACHE_ENTRY NCE)
     // copy link address
     NCECopy->LinkAddress = (PVOID)&NCECopy[1];
     RtlCopyMemory(NCECopy->LinkAddress, NCE->LinkAddress, NCE->LinkAddressLength);
+    NCECopy->Next = NULL;
     
     return NCECopy;
 }
