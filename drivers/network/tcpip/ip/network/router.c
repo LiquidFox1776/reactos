@@ -250,6 +250,9 @@ PNEIGHBOR_CACHE_ENTRY RouterGetRoute(PIP_ADDRESS Destination)
  *     Pointer to NCE for router, NULL if none was found
  * NOTES:
  *     If found the NCE is referenced
+ *
+ * TODO:
+ *     Use FIB_ENTRY Metric to help determine the best router to use
  */
 {
     KIRQL OldIrql;
@@ -273,12 +276,9 @@ PNEIGHBOR_CACHE_ENTRY RouterGetRoute(PIP_ADDRESS Destination)
         // See if the neighbor exists in the cache and copy the state if it does exist
         NCE = NBLocateNeighbor(&Current->Router->Address, Current->Router->Interface);
         if (NCE)
-            Current->Router->State = NCE->State;
+            State = NCE->State;
         else
-            Current->Router->State = NUD_STALE;
-            
-        
-        State = Current->Router->State;
+            State = Current->Router->State;
 
 	Length = CommonPrefixLength(Destination, &Current->NetworkAddress);
 	MaskLength = AddrCountPrefixBits(&Current->Netmask);
@@ -307,7 +307,8 @@ PNEIGHBOR_CACHE_ENTRY RouterGetRoute(PIP_ADDRESS Destination)
 
     // BestNCE might not be in the ARP cache so we need to create it if it is not in there
     // we also need the entry from the cache table to be able to send datagrams
-    BestNCE = NBFindOrCreateNeighbor(BestNCE->Interface, &BestNCE->Address, TRUE);
+    if (!BestNCE)
+        BestNCE = NBFindOrCreateNeighbor(BestNCE->Interface, &BestNCE->Address, TRUE);
     
     return BestNCE;
 }
