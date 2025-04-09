@@ -231,7 +231,7 @@ PFIB_ENTRY RouterAddRoute(
 		   sizeof(FIBE->NetworkAddress) );
     RtlCopyMemory( &FIBE->Netmask, Netmask,
 		   sizeof(FIBE->Netmask) );
-    FIBE->Router         = NBCopy(Router);
+    FIBE->Router         = CopyNCEForFIBUse(Router);
     FIBE->Metric         = Metric;
 
     /* Add FIB to the forward information base */
